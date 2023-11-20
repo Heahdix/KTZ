@@ -11,136 +11,252 @@ namespace KTZ
     /// </summary>
     public partial class MainWindow : Window
     {
-        int[] need = new int[4];
-        int[] stock = new int[3];
-        int[,] cost = new int[3, 4];
-        int[,] x = new int[3, 4];
+        int rows = 0;
+        int columns = 0;
+
+        bool right = true;
+
+        int[] need;
+        int[] stock;
+        int[,] cost;
+        int[,] x;
 
         int iPositive = 0;
         int jPositive = 0;
 
-        int iTop = 0;
-        int jTop = 0;
+        int iTop;
+        int jTop;
         bool foundTop = false;
 
-        TextBox[,] textBoxes = new TextBox[3, 4];
-        TextBlock[,] textBlocks = new TextBlock[3, 4];
-        StackPanel[,] stackPanels = new StackPanel[3, 4];
-        TextBlock[] VTextBlocks = new TextBlock[4];
-        TextBlock[] UTextBlocks = new TextBlock[3];
+        TextBox[,] textBoxes;
+        TextBlock[,] textBlocks;
+        StackPanel[,] stackPanels;
+        TextBlock[] VTextBlocks;
+        TextBlock[] UTextBlocks;
+        TextBox[] aTextBoxes;
+        TextBox[] bTextBoxes;
 
-        int[] U = new int[3];
-        bool[] UValueGiven = new bool[3] { false, false, false };
-        int[] V = new int[4];
-        bool[] VValueGiven = new bool[4] { false, false, false, false };
+        int[] U;
+        bool[] UValueGiven;
+        int[] V;
+        bool[] VValueGiven;
 
-        int[,] grades = new int[3, 4];
+        int[,] grades;
 
         bool planCreated = false;
         bool potential = false;
         bool grade = false;
         bool foundOptimal = true;
+        bool solved = false;
 
-        public MainWindow()
+        public MainWindow(int rows, int columns)
         {
             InitializeComponent();
 
-            textBoxes[0, 0] = A1B1;
-            textBoxes[0, 1] = A1B2;
-            textBoxes[0, 2] = A1B3;
-            textBoxes[0, 3] = A1B4;
-            textBoxes[1, 0] = A2B1;
-            textBoxes[1, 1] = A2B2;
-            textBoxes[1, 2] = A2B3;
-            textBoxes[1, 3] = A2B4;
-            textBoxes[2, 0] = A3B1;
-            textBoxes[2, 1] = A3B2;
-            textBoxes[2, 2] = A3B3;
-            textBoxes[2, 3] = A3B4;
+            this.rows = rows;
+            this.columns = columns;
 
-            textBlocks[0, 0] = XA1B1;
-            textBlocks[0, 1] = XA1B2;
-            textBlocks[0, 2] = XA1B3;
-            textBlocks[0, 3] = XA1B4;
-            textBlocks[1, 0] = XA2B1;
-            textBlocks[1, 1] = XA2B2;
-            textBlocks[1, 2] = XA2B3;
-            textBlocks[1, 3] = XA2B4;
-            textBlocks[2, 0] = XA3B1;
-            textBlocks[2, 1] = XA3B2;
-            textBlocks[2, 2] = XA3B3;
-            textBlocks[2, 3] = XA3B4;
+            aTextBoxes = new TextBox[rows];
+            bTextBoxes = new TextBox[columns];
 
-            stackPanels[0, 0] = StackA1B1;
-            stackPanels[0, 1] = StackA1B2;
-            stackPanels[0, 2] = StackA1B3;
-            stackPanels[0, 3] = StackA1B4;
-            stackPanels[1, 0] = StackA2B1;
-            stackPanels[1, 1] = StackA2B2;
-            stackPanels[1, 2] = StackA2B3;
-            stackPanels[1, 3] = StackA2B4;
-            stackPanels[2, 0] = StackA3B1;
-            stackPanels[2, 1] = StackA3B2;
-            stackPanels[2, 2] = StackA3B3;
-            stackPanels[2, 3] = StackA3B4;
+            need = new int[columns];
+            stock = new int[rows];
+            cost = new int[rows, columns];
+            x = new int[rows, columns];
 
-            VTextBlocks[0] = V1;
-            VTextBlocks[1] = V2;
-            VTextBlocks[2] = V3;
-            VTextBlocks[3] = V4;
+            textBoxes = new TextBox[rows, columns];
+            textBlocks = new TextBlock[rows, columns];
+            stackPanels = new StackPanel[rows, columns];
+            VTextBlocks = new TextBlock[columns];
+            UTextBlocks = new TextBlock[rows];
 
-            UTextBlocks[0] = U1;
-            UTextBlocks[1] = U2;
-            UTextBlocks[2] = U3;
+            U = new int[rows];
+            UValueGiven = new bool[rows];
+            V = new int[columns];
+            VValueGiven = new bool[columns];
+
+            grades = new int[rows, columns];
+
+
+            for (int i = 0; i <= rows; i++)
+            {
+                MainPlace.RowDefinitions.Add(new RowDefinition());
+            }
+
+            for (int i = 0; i <= columns; i++)
+            {
+                MainPlace.ColumnDefinitions.Add(new ColumnDefinition());
+            }
+
+            for (int i = 0; i < rows; i++)
+            {
+                TextBlock textBlock = new TextBlock();
+                textBlock.Text = "B" + (i + 1);
+                MainPlace.Children.Add(textBlock);
+                Grid.SetColumn(textBlock, 1);
+                Grid.SetRow(textBlock, i + 2);
+            }
+
+            for (int i = 0; i < columns; i++)
+            {
+                TextBlock textBlock = new TextBlock();
+                textBlock.Text = "A" + (i + 1);
+                MainPlace.Children.Add(textBlock);
+                Grid.SetColumn(textBlock, i + 2);
+                Grid.SetRow(textBlock, 1);
+            }
+
+            for (int i = 0; i < rows; i++)
+            {
+                for (int j = 0; j < columns; j++)
+                {
+                    StackPanel stackPanel = new StackPanel();
+                    TextBox textBox = new TextBox();
+                    TextBlock textBlock = new TextBlock();
+
+                    MainPlace.Children.Add(stackPanel);
+
+                    Grid.SetColumn(stackPanel, j + 2);
+                    Grid.SetRow(stackPanel, i + 2);
+
+                    stackPanel.Children.Add(textBox);
+                    stackPanel.Children.Add(textBlock);
+
+                    stackPanels[i, j] = stackPanel;
+                    textBoxes[i, j] = textBox;
+                    textBlocks[i, j] = textBlock;
+                }
+            }
+
+            for (int i = 0; i < columns; i++)
+            {
+                TextBlock textBlock = new TextBlock();
+                MainPlace.Children.Add(textBlock);
+                Grid.SetColumn(textBlock, i + 2);
+                VTextBlocks[i] = textBlock;
+            }
+
+            for (int i = 0; i < rows; i++)
+            {
+                TextBlock textBlock = new TextBlock();
+                MainPlace.Children.Add(textBlock);
+                Grid.SetRow(textBlock, i + 2);
+                UTextBlocks[i] = textBlock;
+            }
+
+            for (int i = 0; i < columns; i++)
+            {
+                TextBox textBox = new TextBox();
+
+                MainPlace.Children.Add(textBox);
+                Grid.SetRow(textBox, rows + 2);
+                Grid.SetColumn(textBox, i + 2);
+
+                bTextBoxes[i] = textBox;
+            }
+
+            for (int i = 0; i < rows; i++)
+            {
+                TextBox textBox = new TextBox();
+
+                MainPlace.Children.Add(textBox);
+                Grid.SetColumn(textBox, columns + 2);
+                Grid.SetRow(textBox, i + 2);
+
+                aTextBoxes[i] = textBox;
+            }
         }
 
         private void Button_Click(object sender, RoutedEventArgs e)
         {
+            right = true;
+
+            need = new int[columns];
+            stock = new int[rows];
+            cost = new int[rows, columns];
+            x = new int[rows, columns];
+
+            iPositive = 0;
+            jPositive = 0;
+
+            foundTop = false;
+
+            U = new int[rows];
+            UValueGiven = new bool[rows];
+            V = new int[columns];
+            VValueGiven = new bool[columns];
+
+            grades = new int[rows, columns];
+
+            planCreated = false;
+            potential = false;
+            grade = false;
+            foundOptimal = true;
+            solved = false; 
             try
             {
-                cost[0, 0] = Convert.ToInt32(A1B1.Text);
-                cost[0, 1] = Convert.ToInt32(A1B2.Text);
-                cost[0, 2] = Convert.ToInt32(A1B3.Text);
-                cost[0, 3] = Convert.ToInt32(A1B4.Text);
-                cost[1, 0] = Convert.ToInt32(A2B1.Text);
-                cost[1, 1] = Convert.ToInt32(A2B2.Text);
-                cost[1, 2] = Convert.ToInt32(A2B3.Text);
-                cost[1, 3] = Convert.ToInt32(A2B4.Text);
-                cost[2, 0] = Convert.ToInt32(A3B1.Text);
-                cost[2, 1] = Convert.ToInt32(A3B2.Text);
-                cost[2, 2] = Convert.ToInt32(A3B3.Text);
-                cost[2, 3] = Convert.ToInt32(A3B4.Text);
+                for (int i = 0; i < rows; i++)
+                {
+                    for (int j  =0; j < columns; j++)
+                    {
+                        cost[i,j] = Convert.ToInt32(textBoxes[i,j].Text);
+                    }
+                }
 
-                stock[0] = Convert.ToInt32(A1a.Text);
-                stock[1] = Convert.ToInt32(A2a.Text);
-                stock[2] = Convert.ToInt32(A3a.Text);
+                for (int i = 0; i < rows; i++)
+                {
+                    stock[i] = Convert.ToInt32(aTextBoxes[i].Text);
+                }
 
-                need[0] = Convert.ToInt32(B1b.Text);
-                need[1] = Convert.ToInt32(B2b.Text);
-                need[2] = Convert.ToInt32(B3b.Text);
-                need[3] = Convert.ToInt32(B4b.Text);
+                for (int i = 0; i < columns; i++)
+                {
+                    need[i] = Convert.ToInt32(bTextBoxes[i].Text);
+                }
+
+                foreach(var num in cost)
+                {
+                    if (num <= 0)
+                    {
+                        MessageBox.Show("Значение стоимостей должны быть больше 0");
+                        right = false;
+                    }
+                }
+
+                int sumStock = stock.Sum(x => x);
+                int sumNeed = need.Sum(x => x);
+
+                if (sumNeed != sumStock)
+                {
+                    MessageBox.Show("Суммы a должна быть равна b");
+                    right = false;
+                }
+
+                if (right)
+                {
+                    foreach (var textBox in textBoxes)
+                    {
+                        textBox.IsEnabled = false;
+                    }
+
+                    foreach(var a in aTextBoxes)
+                    {
+                        a.IsEnabled = false;
+                    }
+
+                    foreach (var b in bTextBoxes)
+                    {
+                        b.IsEnabled = false;
+                    }
+
+                    Solve.IsEnabled = false;
+                    NextStep.IsEnabled = true;
+                }
             }
             catch
             {
                 MessageBox.Show("Введите числовые значения");
             }
 
-            foreach (var textBox in textBoxes)
-            {
-                textBox.IsEnabled = false;
-            }
-
-            A1a.IsEnabled = false;
-            A2a.IsEnabled = false;
-            A3a.IsEnabled = false;
-
-            B1b.IsEnabled = false;
-            B2b.IsEnabled = false;
-            B3b.IsEnabled = false;
-            B4b.IsEnabled = false;
-
-            Solve.IsEnabled = false;
-            NextStep.IsEnabled = true;
         }
 
         void Solving()
@@ -150,9 +266,9 @@ namespace KTZ
                 int minI = 0;
                 int minJ = 0;
 
-                for (int i = 0; i < 3; i++)
+                for (int i = 0; i < rows; i++)
                 {
-                    for (int j = 0; j < 4; j++)
+                    for (int j = 0; j < columns; j++)
                     {
                         if (cost[i, j] < cost[minI, minJ] && stock[i] != 0 && need[j] != 0 || stock[minI] == 0 || need[minJ] == 0)
                         {
@@ -185,10 +301,9 @@ namespace KTZ
                 }
                 else
                 {
-                    //надо всё на белый вернуть
-                    for (int i = 0; i < 3; i++)
+                    for (int i = 0; i < rows; i++)
                     {
-                        for (int j = 0; j < 4; j++)
+                        for (int j = 0; j < columns; j++)
                         {
                             stackPanels[i, j].Background = new SolidColorBrush(Colors.White);
                         }
@@ -200,9 +315,9 @@ namespace KTZ
             {
                 bool first = true;
 
-                for (int i = 0; i < 3; i++)
+                for (int i = 0; i < rows; i++)
                 {
-                    for (int j = 0; j < 4; j++)
+                    for (int j = 0; j < columns; j++)
                     {
                         textBoxes[i, j].Text = cost[i, j].ToString();
                         stackPanels[i, j].Background = new SolidColorBrush(Colors.White);
@@ -211,9 +326,9 @@ namespace KTZ
 
                 while (UValueGiven.Contains(false) || VValueGiven.Contains(false))
                 {
-                    for (int i = 0; i < 3; i++)
+                    for (int i = 0; i < rows; i++)
                     {
-                        for (int j = 0; j < 4; j++)
+                        for (int j = 0; j < columns; j++)
                         {
                             if (x[i, j] != 0)
                             {
@@ -248,9 +363,9 @@ namespace KTZ
             }
             else if (!grade)
             {
-                for (int i = 0; i < 3; i++)
+                for (int i = 0; i < rows; i++)
                 {
-                    for (int j = 0; j < 4; j++)
+                    for (int j = 0; j < columns; j++)
                     {
                         grades[i, j] = V[j] - U[i] - cost[i, j];
                         textBoxes[i, j].Text = "Δ = " + grades[i, j].ToString();
@@ -268,18 +383,10 @@ namespace KTZ
             {
                 if (!foundTop)
                 {
-                    U1.Text = "";
-                    U2.Text = "";
-                    U3.Text = "";
-
-                    V1.Text = "";
-                    V2.Text = "";
-                    V3.Text = "";
-                    V4.Text = "";
-
-                    for (int i = 0; i < 3; i++)
+                    
+                    for (int i = 0; i < rows; i++)
                     {
-                        for (int j = 0; j < 4; j++)
+                        for (int j = 0; j < columns; j++)
                         {
                             if (i == iPositive || j == jPositive)
                             {
@@ -290,21 +397,24 @@ namespace KTZ
                             {
                                 iTop = i;
                                 jTop = j;
+                                foundTop = true;
                             }
                         }
                     }
-                    stackPanels[iTop, jTop].Background = new SolidColorBrush(Colors.Green);
-                    stackPanels[iTop, jPositive].Background = new SolidColorBrush(Colors.Green);
-                    stackPanels[iPositive, jTop].Background = new SolidColorBrush(Colors.Green);
-                    stackPanels[iPositive, jPositive].Background = new SolidColorBrush(Colors.Green);
+                    if (foundTop)
+                    {
+                        stackPanels[iTop, jTop].Background = new SolidColorBrush(Colors.Green);
+                        stackPanels[iTop, jPositive].Background = new SolidColorBrush(Colors.Green);
+                        stackPanels[iPositive, jTop].Background = new SolidColorBrush(Colors.Green);
+                        stackPanels[iPositive, jPositive].Background = new SolidColorBrush(Colors.Green);
 
-                    foundTop = true;
 
-                    textBoxes[iTop, jTop].Text = textBoxes[iTop, jTop].Text + " +";
-                    textBoxes[iTop, jPositive].Text = textBoxes[iTop, jPositive].Text + " -";
-                    textBoxes[iPositive, jTop].Text = textBoxes[iPositive, jTop].Text + " -";
-                    textBoxes[iPositive, jPositive].Text = textBoxes[iPositive, jPositive].Text + " +";
-
+                        textBoxes[iTop, jTop].Text = textBoxes[iTop, jTop].Text + " +";
+                        textBoxes[iTop, jPositive].Text = textBoxes[iTop, jPositive].Text + " -";
+                        textBoxes[iPositive, jTop].Text = textBoxes[iPositive, jTop].Text + " -";
+                        textBoxes[iPositive, jPositive].Text = textBoxes[iPositive, jPositive].Text + " +";
+                    }
+                    
                 }
                 else
                 {
@@ -314,9 +424,9 @@ namespace KTZ
                     x[iPositive, jTop] = x[iPositive, jTop] - min;
                     x[iTop, jPositive] = x[iTop, jPositive] - min;
 
-                    for (int i = 0; i < 3; i++)
+                    for (int i = 0; i < rows; i++)
                     {
-                        for (int j = 0; j < 4; j++)
+                        for (int j = 0; j < columns; j++)
                         {
                             textBlocks[i, j].Text = "";
                             if (x[i, j] != 0)
@@ -330,17 +440,46 @@ namespace KTZ
                     foundTop = false;
                     potential = false;
 
-                    UValueGiven = new bool[3] { false, false, false };
-                    VValueGiven = new bool[4] { false, false, false, false };
+                    UValueGiven = new bool[rows];
+                    VValueGiven = new bool[columns];
                 }
 
                 
             }
+            else if (solved)
+            {
+                foreach (var textBox in textBoxes)
+                {
+                    textBox.Text = "";
+                    textBox.IsEnabled = true;
+                }
+                foreach (var textBlock in UTextBlocks)
+                {
+                    textBlock.Text = "";
+                }
+                foreach (var textBlock in VTextBlocks)
+                {
+                    textBlock.Text = "";
+                }
+                foreach (var textBlock in textBlocks)
+                {
+                    textBlock.Text = "";
+                }
+                foreach (var textBox in aTextBoxes)
+                {
+                    textBox.IsEnabled = true;
+                }
+                foreach (var textBox in bTextBoxes)
+                {
+                    textBox.IsEnabled = true;
+                }
+                Solve.IsEnabled = true;
+                NextStep.IsEnabled = false;
+            }
             else
             {
                 MessageBox.Show("Найдено оптимальное решенеие");
-                Solve.IsEnabled = true;
-                NextStep.IsEnabled = false;
+                solved = true;
             }
         }
 
@@ -351,46 +490,17 @@ namespace KTZ
 
         void SetNeed(int j)
         {
-            switch (j)
-            {
-                case 0:
-                    B1b.Text = need[j].ToString();
-                    break;
-                case 1:
-                    B2b.Text = need[j].ToString();
-                    break;
-                case 2:
-                    B3b.Text = need[j].ToString();
-                    break;
-                case 3:
-                    B4b.Text = need[j].ToString();
-                    break;
-                default:
-                    break;
-            }
+            bTextBoxes[j].Text = need[j].ToString();
         }
 
         void SetStock(int i)
         {
-            switch (i)
-            {
-                case 0:
-                    A1a.Text = stock[i].ToString();
-                    break;
-                case 1:
-                    A2a.Text = stock[i].ToString();
-                    break;
-                case 2:
-                    A3a.Text = stock[i].ToString();
-                    break;
-                default:
-                    break;
-            }
+            aTextBoxes[i].Text = stock[i].ToString();
         }
 
         void RemoveColumn(int j)
         {
-            for (int i = 0; i < 3; i++)
+            for (int i = 0; i < rows; i++)
             {
                 stackPanels[i, j].Background = new SolidColorBrush(Colors.Red);
             }
@@ -398,7 +508,7 @@ namespace KTZ
 
         void RemoveRow(int i)
         {
-            for (int j = 0; j < 4; j++)
+            for (int j = 0; j < columns; j++)
             {
                 stackPanels[i, j].Background = new SolidColorBrush(Colors.Red);
             }
