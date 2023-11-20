@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
@@ -24,10 +26,6 @@ namespace KTZ
         int iPositive = 0;
         int jPositive = 0;
 
-        int iTop;
-        int jTop;
-        bool foundTop = false;
-
         TextBox[,] textBoxes;
         TextBlock[,] textBlocks;
         StackPanel[,] stackPanels;
@@ -43,11 +41,15 @@ namespace KTZ
 
         int[,] grades;
 
+        bool[,] usableCells;
+        string[,] signs;
+
         bool planCreated = false;
         bool potential = false;
         bool grade = false;
         bool foundOptimal = true;
         bool solved = false;
+        bool foundPath = false;
 
         public MainWindow(int rows, int columns)
         {
@@ -77,6 +79,8 @@ namespace KTZ
 
             grades = new int[rows, columns];
 
+            usableCells = new bool[rows, columns];
+            signs = new string[rows, columns];
 
             for (int i = 0; i <= rows; i++)
             {
@@ -176,11 +180,6 @@ namespace KTZ
             cost = new int[rows, columns];
             x = new int[rows, columns];
 
-            iPositive = 0;
-            jPositive = 0;
-
-            foundTop = false;
-
             U = new int[rows];
             UValueGiven = new bool[rows];
             V = new int[columns];
@@ -192,14 +191,16 @@ namespace KTZ
             potential = false;
             grade = false;
             foundOptimal = true;
-            solved = false; 
+            solved = false;
+            foundPath = false;
+
             try
             {
                 for (int i = 0; i < rows; i++)
                 {
-                    for (int j  =0; j < columns; j++)
+                    for (int j = 0; j < columns; j++)
                     {
-                        cost[i,j] = Convert.ToInt32(textBoxes[i,j].Text);
+                        cost[i, j] = Convert.ToInt32(textBoxes[i, j].Text);
                     }
                 }
 
@@ -213,7 +214,7 @@ namespace KTZ
                     need[i] = Convert.ToInt32(bTextBoxes[i].Text);
                 }
 
-                foreach(var num in cost)
+                foreach (var num in cost)
                 {
                     if (num <= 0)
                     {
@@ -238,7 +239,7 @@ namespace KTZ
                         textBox.IsEnabled = false;
                     }
 
-                    foreach(var a in aTextBoxes)
+                    foreach (var a in aTextBoxes)
                     {
                         a.IsEnabled = false;
                     }
@@ -285,6 +286,7 @@ namespace KTZ
                     textBlocks[minI, minJ].Text = "X" + (minI + 1) + "" + (minJ + 1) + " = " + need[minJ];
                     stock[minI] -= need[minJ];
                     need[minJ] = 0;
+                    usableCells[minI, minJ] = true;
                     SetNeed(minJ);
                     SetStock(minI);
                     RemoveColumn(minJ);
@@ -295,6 +297,7 @@ namespace KTZ
                     textBlocks[minI, minJ].Text = "X" + (minI + 1) + "" + (minJ + 1) + " = " + stock[minI];
                     need[minJ] -= stock[minI];
                     stock[minI] = 0;
+                    usableCells[minI, minJ] = true;
                     SetNeed(minJ);
                     SetStock(minI);
                     RemoveRow(minI);
@@ -381,69 +384,68 @@ namespace KTZ
             }
             else if (!foundOptimal)
             {
-                if (!foundTop)
+                if (!foundPath)
                 {
-                    
-                    for (int i = 0; i < rows; i++)
-                    {
-                        for (int j = 0; j < columns; j++)
-                        {
-                            if (i == iPositive || j == jPositive)
-                            {
-                                continue;
-                            }
-
-                            if (x[i, j] != 0 && x[i, jPositive] != 0 && x[iPositive, j] != 0)
-                            {
-                                iTop = i;
-                                jTop = j;
-                                foundTop = true;
-                            }
-                        }
-                    }
-                    if (foundTop)
-                    {
-                        stackPanels[iTop, jTop].Background = new SolidColorBrush(Colors.Green);
-                        stackPanels[iTop, jPositive].Background = new SolidColorBrush(Colors.Green);
-                        stackPanels[iPositive, jTop].Background = new SolidColorBrush(Colors.Green);
-                        stackPanels[iPositive, jPositive].Background = new SolidColorBrush(Colors.Green);
-
-
-                        textBoxes[iTop, jTop].Text = textBoxes[iTop, jTop].Text + " +";
-                        textBoxes[iTop, jPositive].Text = textBoxes[iTop, jPositive].Text + " -";
-                        textBoxes[iPositive, jTop].Text = textBoxes[iPositive, jTop].Text + " -";
-                        textBoxes[iPositive, jPositive].Text = textBoxes[iPositive, jPositive].Text + " +";
-                    }
-                    
+                    FindPath();
+                    foundPath = true;
                 }
                 else
                 {
-                    int min = Math.Min(x[iTop, jPositive], x[iPositive, jTop]);
-                    x[iTop, jTop] = x[iTop, jTop] + min;
-                    x[iPositive, jPositive] = x[iPositive, jPositive] + min;
-                    x[iPositive, jTop] = x[iPositive, jTop] - min;
-                    x[iTop, jPositive] = x[iTop, jPositive] - min;
+                    List<int> negative = new List<int>();
 
                     for (int i = 0; i < rows; i++)
                     {
                         for (int j = 0; j < columns; j++)
                         {
-                            textBlocks[i, j].Text = "";
-                            if (x[i, j] != 0)
+                            if (signs[i, j] == "-")
                             {
-                                textBlocks[i, j].Text = "X" + (i + 1) + "" + (j + 1) + " = " + x[i, j];
+                                negative.Add(x[i, j]);
                             }
                         }
                     }
 
+                    int min = negative.Min(x => x);
+
+                    x[iPositive, jPositive] = min;
+                    textBlocks[iPositive, jPositive].Text = "X" + (iPositive + 1) + "" + (jPositive + 1) + " = " + x[iPositive, jPositive];
+
+                    for (int i = 0; i < rows; i++)
+                    {
+                        for (int j = 0; j < columns; j++)
+                        {
+
+                            if (x[i, j] != 0 && (i != iPositive || j != jPositive))
+                            {
+                                if (signs[i, j] == "+")
+                                {
+                                    x[i, j] += min;
+                                }
+                                else if (signs[i, j] == "-")
+                                {
+                                    x[i, j] -= min;
+                                }
+
+                                if (x[i, j] != 0)
+                                {
+                                    textBlocks[i, j].Text = "X" + (i + 1) + "" + (j + 1) + " = " + x[i, j];
+                                }
+                                else
+                                {
+                                    textBlocks[i, j].Text = "";
+                                }
+                            }
+                        }
+                    }
                     foundOptimal = true;
-                    foundTop = false;
                     potential = false;
 
                     UValueGiven = new bool[rows];
                     VValueGiven = new bool[columns];
-                }
 
+                    signs = new string[rows, columns];
+                    foundPath = false;
+                }
+                
                 
             }
             else if (solved)
@@ -511,6 +513,134 @@ namespace KTZ
             for (int j = 0; j < columns; j++)
             {
                 stackPanels[i, j].Background = new SolidColorBrush(Colors.Red);
+            }
+        }
+
+        void FindPath()
+        {
+            bool[,] usableCellsCopy = (bool[,])usableCells.Clone();
+            bool allCellsDeleted = false;
+            usableCellsCopy[iPositive, jPositive] = true;
+            
+            while (!allCellsDeleted)
+            {
+                allCellsDeleted = true;
+                for (int i = 0; i < rows; i++)
+                {
+                    for (int j = 0; j < columns; j++)
+                    {
+                        if (usableCellsCopy[i, j])
+                        {
+                            bool hasVerticalNeighbours = false;
+                            bool hasHorizontalNeighbours = false;
+
+                            for (int k = 0; k < rows; k++)
+                            {
+                                if (k == i)
+                                {
+                                    continue;
+                                }
+
+                                if (usableCellsCopy[k, j])
+                                {
+                                    hasVerticalNeighbours = true;
+                                }
+                            }
+
+                            if (hasVerticalNeighbours)
+                            {
+                                for (int k = 0; k < columns; k++)
+                                {
+                                    if (k == j)
+                                    {
+                                        continue;
+                                    }
+
+                                    if (usableCellsCopy[i, k])
+                                    {
+                                        hasHorizontalNeighbours = true;
+                                    }
+                                }
+                            }
+
+                            if (!hasVerticalNeighbours || !hasHorizontalNeighbours)
+                            {
+                                allCellsDeleted = false;
+                                usableCellsCopy[i, j] = false;
+                            }
+                        }
+                    }
+                }
+            }
+
+            signs[iPositive, jPositive] = "+";
+            textBoxes[iPositive, jPositive].Text = textBoxes[iPositive, jPositive].Text + " " + signs[iPositive, jPositive];
+            stackPanels[iPositive, jPositive].Background = new SolidColorBrush(Colors.Green);
+
+            bool allSignsGiven = false;
+
+            while (!allSignsGiven)
+            {
+                allSignsGiven = true;
+                for (int i = 0; i < rows; i++)
+                {
+                    for (int j = 0; j < columns; j++)
+                    {
+                        if (usableCellsCopy[i, j] && signs[i, j] == null)
+                        {
+                            for (int k = 0; k < rows; k++)
+                            {
+                                if (k == i)
+                                {
+                                    continue;
+                                }
+
+                                if (usableCellsCopy[k, j] && signs[k, j] != null)
+                                {
+                                    if (signs[k, j] == "+")
+                                    {
+                                        signs[i, j] = "-";
+                                    }
+                                    else if (signs[k, j] == "-")
+                                    {
+                                        signs[i, j] = "+";
+                                    }
+
+                                    textBoxes[i, j].Text = textBoxes[i, j].Text + " " + signs[i, j];
+                                    stackPanels[i, j].Background = new SolidColorBrush(Colors.Green);
+                                    allSignsGiven = false;
+                                }
+                            }
+
+                            if (signs[i, j] == null)
+                            {
+                                for (int k = 0; k < columns; k++)
+                                {
+                                    if (k == j)
+                                    {
+                                        continue;
+                                    }
+
+                                    if (usableCellsCopy[i, k] && signs[i, k] != null)
+                                    {
+                                        if (signs[i, k] == "+")
+                                        {
+                                            signs[i, j] = "-";
+                                        }
+                                        else if (signs[i, k] == "-")
+                                        {
+                                            signs[i, j] = "+";
+                                        }
+
+                                        textBoxes[i, j].Text = textBoxes[i, j].Text + " " + signs[i, j];
+                                        stackPanels[i, j].Background = new SolidColorBrush(Colors.Green);
+                                        allSignsGiven = false;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
             }
         }
     }
