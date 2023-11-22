@@ -386,6 +386,20 @@ namespace KTZ
             {
                 if (!foundPath)
                 {
+                    for (int i = 0; i < rows; i++)
+                    {
+                        for (int j = 0; j < columns; j++)
+                        {
+                            if (x[i, j] > 0)
+                            {
+                                usableCells[i, j] = true;
+                            }
+                            else
+                            {
+                                usableCells[i, j] = false;
+                            }
+                        }
+                    }
                     FindPath();
                     foundPath = true;
                 }
