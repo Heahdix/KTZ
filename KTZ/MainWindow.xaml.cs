@@ -169,6 +169,22 @@ namespace KTZ
 
                 aTextBoxes[i] = textBox;
             }
+
+            TextBlock aTextBlock = new TextBlock();
+
+            MainPlace.Children.Add(aTextBlock);
+            Grid.SetColumn(aTextBlock, columns + 2);
+            Grid.SetRow(aTextBlock, 1);
+
+            aTextBlock.Text = "a";
+
+            TextBlock bTextBlock = new TextBlock();
+
+            MainPlace.Children.Add(bTextBlock);
+            Grid.SetRow(bTextBlock, rows + 2);
+            Grid.SetColumn(bTextBlock, 1);
+
+            bTextBlock.Text = "b";
         }
 
         private void Button_Click(object sender, RoutedEventArgs e)
